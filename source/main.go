@@ -7,7 +7,7 @@ import (
 
 func main() {
 	testInputs := internalmath.CreateVector[float64](1.0, 2.0, 3.0, 5.0)
-	network := neural.CreateNeuralNetwork(testInputs, 5, 4, 5, 6, 1)
+	network := neural.CreateNeuralNetwork(testInputs, 20, 50, 40, 5, 1)
 
 	network.Compute()
 

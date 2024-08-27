@@ -17,17 +17,15 @@ func CreateNeuron(v *internalmath.Vector[float64], Bias float64) *SigmoidNeuron 
 }
 
 func CreateNeuronRandomized(size int) *SigmoidNeuron {
-	Weights := internalmath.CreateVectorWithSize[float64](size)
+	weights := internalmath.CreateVectorWithSize[float64](size)
 
 	for i := 0; i < size; i++ {
-		Weights.Data[i] = rand.Float64()*2.0 - 1.0
+		weights.Data[i] = rand.Float64()*2.0 - 1.0
 	}
 
-	// want to keep Weights as values instead of pointers for less indirection
-	return &SigmoidNeuron{Weights: *Weights, Bias: rand.Float64()*2.0 - 1.0}
+	// want to keep weights as values instead of pointers for less indirection
+	return &SigmoidNeuron{Weights: *weights, Bias: rand.Float64()*2.0 - 1.0}
 }
-
-// may add more in the future and allow user to specifcy an activation function with interface
 
 func (s *SigmoidNeuron) ComputeSigmoid(input *internalmath.Vector[float64]) float64 {
 	if input.Size() != s.Weights.Size() {
