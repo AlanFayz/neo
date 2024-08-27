@@ -17,8 +17,38 @@ type NeuralNetwork struct {
 	Output       Layer
 }
 
-func CreateNeuralNetwork() *NeuralNetwork {
-	return &NeuralNetwork{}
+// neuron count is the number of neurons per hidden layer, the last neuron count is for the output layer
+func CreateNeuralNetwork(input *internalmath.Vector[float64], neuronCount ...int) *NeuralNetwork {
+	network := NeuralNetwork{}
+
+	//first we copy the inputs and make the first hidden layer
+	network.Inputs = *input.Copy()
+
+	first := Layer{}
+
+	for neuronIndex := 0; neuronIndex < neuronCount[0]; neuronIndex++ {
+		first.Neurons = append(first.Neurons, *CreateNeuronRandomized(network.Inputs.Size()))
+	}
+
+	network.HiddenLayers = append(network.HiddenLayers, first)
+
+	//do the rest of the hidden layers
+	for i := 1; i < len(neuronCount)-1; i++ {
+		layer := Layer{}
+
+		for neuronIndex := 0; neuronIndex < neuronCount[i]; neuronIndex++ {
+			layer.Neurons = append(layer.Neurons, *CreateNeuronRandomized(neuronCount[i-1]))
+		}
+
+		network.HiddenLayers = append(network.HiddenLayers, layer)
+	}
+
+	//create the output layer
+	for neuronIndex := 0; neuronIndex < neuronCount[len(neuronCount)-1]; neuronIndex++ {
+		network.Output.Neurons = append(network.Output.Neurons, *CreateNeuronRandomized(neuronCount[len(neuronCount)-2]))
+	}
+
+	return &network
 }
 
 func (n *NeuralNetwork) SetInputs(inputs *internalmath.Vector[float64]) {
