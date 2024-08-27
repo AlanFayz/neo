@@ -1,4 +1,4 @@
-package math
+package internalmath
 
 import (
 	"fmt"
@@ -11,16 +11,24 @@ type Vector[T constraints.Float] struct {
 	Data []T
 }
 
-func NewVector[T constraints.Float](values ...T) *Vector[T] {
+func CreateVector[T constraints.Float](values ...T) *Vector[T] {
 
-	Vector := Vector[T]{}
+	vector := Vector[T]{}
 
-	Vector.Data = append(Vector.Data, values...)
-	return &Vector
+	vector.Data = append(vector.Data, values...)
+	return &vector
+}
+
+func CreateVectorWithSize[T constraints.Float](size int) *Vector[T] {
+	return &Vector[T]{Data: make([]T, size)}
 }
 
 func (v *Vector[T]) ToString() string {
 	return fmt.Sprintf("%v", v.Data)
+}
+
+func (v *Vector[T]) Size() int {
+	return len(v.Data)
 }
 
 func (v *Vector[T]) Add(other *Vector[T]) *Vector[T] {
@@ -80,7 +88,7 @@ func (v *Vector[T]) Div(other interface{}) *Vector[T] {
 
 func (v *Vector[T]) Dot(other *Vector[T]) T {
 	if len(v.Data) != len(other.Data) {
-		print("vector must have same length")
+		fmt.Println("vector must have same length")
 		return 0
 	}
 
@@ -100,6 +108,7 @@ func (v *Vector[T]) Magnitude() T {
 func (v *Vector[T]) Normalize() *Vector[T] {
 	magnitude := v.Magnitude()
 	if magnitude == 0 {
+		print("magnitude cannot be zero when normalizing")
 		return v
 	}
 
@@ -108,4 +117,14 @@ func (v *Vector[T]) Normalize() *Vector[T] {
 	}
 
 	return v
+}
+
+func (v *Vector[T]) Copy() *Vector[T] {
+	newVector := Vector[T]{Data: make([]T, len(v.Data))}
+	copy(newVector.Data, v.Data)
+	return &newVector
+}
+
+func (v *Vector[T]) PushValue(data T) {
+	v.Data = append(v.Data, data)
 }

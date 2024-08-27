@@ -1,11 +1,31 @@
 package main
 
-import "github.com/DevAlgos/neo/source/math"
+import (
+	internalmath "github.com/DevAlgos/neo/source/math"
+	"github.com/DevAlgos/neo/source/neural"
+)
 
 func main() {
-	v1 := math.NewVector[float64](1.0, 2.0, 5.0, 1.0, 5.0, 9.0, 10.0)
+	network := neural.NeuralNetwork{}
 
-	v1.Normalize().Mul(5.0)
+	testInputs := internalmath.CreateVector[float64](1.0, 2.0, 3.0, 5.0)
+	network.SetInputs(testInputs)
 
-	print(v1.ToString())
+	layer := neural.Layer{}
+
+	for i := 0; i < 5; i++ {
+		layer.Neurons = append(layer.Neurons, *neural.CreateNeuron(internalmath.CreateVector[float64](1.0, 2.0, 3.0, 5.0), 5.0))
+	}
+
+	network.PushHiddenLayer(&layer)
+
+	network.SetOutputCount(1)
+
+	outNeuron := neural.CreateNeuronRandomized(5)
+	network.SetOutputNeuron(outNeuron, 0)
+
+	network.Randomize()
+	network.Compute()
+
+	print(network.GetOutputs().ToString())
 }
