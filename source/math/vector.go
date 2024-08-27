@@ -119,6 +119,17 @@ func (v *Vector[T]) Normalize() *Vector[T] {
 	return v
 }
 
+func (v *Vector[T]) Length() float64 {
+
+	var sumSquared float64 = 0
+
+	for i := range v.Data {
+		sumSquared += float64(i) * float64(i)
+	}
+
+	return math.Sqrt(sumSquared)
+}
+
 func (v *Vector[T]) Copy() *Vector[T] {
 	newVector := Vector[T]{Data: make([]T, len(v.Data))}
 	copy(newVector.Data, v.Data)
