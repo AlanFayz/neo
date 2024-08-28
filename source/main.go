@@ -3,31 +3,36 @@ package main
 import (
 	"fmt"
 
-	internalmath "github.com/DevAlgos/neo/source/math"
-	"github.com/DevAlgos/neo/source/neural"
+	"github.com/DevAlgos/neo/source/neural/feedforward"
 )
 
 func main() {
-	testInputs := internalmath.CreateVector[float64](1.0, 2.0, 3.0, 5.0)
-	network := neural.CreateNeuralNetwork(testInputs, 20, 50, 30, 10, 50, 20, 10)
+	network := feedforward.CreateNeuralNetwork(2, 5, 4)
 
-	testInputs = internalmath.CreateVector[float64](5.4, 10000.0, 49.0, 60.4)
+	testInput := make([]float64, 0)
+	testInput = append(testInput, 1.0, 0.5)
 
-	network.Compute(testInputs)
+	expectedInput := make([]float64, 0)
+	expectedInput = append(expectedInput, 0.5, 0.0, 0.5, 1.0)
+
+	network.FeedForward(testInput)
+
 	fmt.Println("------- before training --------")
-	fmt.Println(network.GetOutputs().ToString())
+	fmt.Println(network.GetResult())
 
-	expectedOutput := internalmath.CreateVector[float64](1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.5, 0.9, 1.0)
+	network.ClearGradients()
 
-	dataGroup := neural.DataGroup{}
-	dataGroup.Input = testInputs
-	dataGroup.Expected = expectedOutput
-	dataGroup.LearningRate = 0.05
+	data := feedforward.DataGroup{}
+	data.Expected = expectedInput
+	data.Input = testInput
+	data.LearningRate = 0.1
 
-	network.TrainNew(&dataGroup, 10000)
+	for trainingCount := 0; trainingCount < 1000; trainingCount++ {
+		network.Train(&data)
+	}
 
-	network.Compute(testInputs)
+	network.FeedForward(testInput)
 
-	fmt.Println("------ after training -------")
-	fmt.Println(network.GetOutputs().ToString())
+	fmt.Println("------- after training --------")
+	fmt.Println(network.GetResult())
 }
