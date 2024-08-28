@@ -40,3 +40,14 @@ func (s *SigmoidNeuron) ComputeSigmoid(input *internalmath.Vector[float64]) floa
 
 	return internalmath.Sigmoid(s.Weights.Dot(input) + s.Bias)
 }
+
+func (s *SigmoidNeuron) Compute(input *internalmath.Vector[float64]) float64 {
+	if input.Size() != s.Weights.Size() {
+		fmt.Println("weight size: ", s.Weights.Size())
+		fmt.Println("input size: ", input.Size())
+		fmt.Println("input was not the same length as the Weights")
+		return 0
+	}
+
+	return s.Weights.Dot(input) + s.Bias
+}

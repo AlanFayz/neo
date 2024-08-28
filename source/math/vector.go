@@ -136,6 +136,6 @@ func (v *Vector[T]) Copy() *Vector[T] {
 	return &newVector
 }
 
-func (v *Vector[T]) PushValue(data T) {
+func (v *Vector[T]) Push(data T) {
 	v.Data = append(v.Data, data)
 }
