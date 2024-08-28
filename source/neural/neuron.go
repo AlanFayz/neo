@@ -8,8 +8,10 @@ import (
 )
 
 type SigmoidNeuron struct {
-	Weights internalmath.Vector[float64]
-	Bias    float64
+	Weights      internalmath.Vector[float64]
+	Gradients    internalmath.Vector[float64]
+	Bias         float64
+	BiasGradient float64
 }
 
 func CreateNeuron(v *internalmath.Vector[float64], Bias float64) *SigmoidNeuron {
@@ -18,13 +20,14 @@ func CreateNeuron(v *internalmath.Vector[float64], Bias float64) *SigmoidNeuron 
 
 func CreateNeuronRandomized(size int) *SigmoidNeuron {
 	weights := internalmath.CreateVectorWithSize[float64](size)
+	gradients := internalmath.CreateVectorWithSize[float64](size)
 
 	for i := 0; i < size; i++ {
-		weights.Data[i] = rand.Float64()*2.0 - 1.0
+		weights.Data[i] = rand.NormFloat64() * 0.1
 	}
 
 	// want to keep weights as values instead of pointers for less indirection
-	return &SigmoidNeuron{Weights: *weights, Bias: rand.Float64()*2.0 - 1.0}
+	return &SigmoidNeuron{Weights: *weights, Gradients: *gradients, Bias: rand.NormFloat64() * 0.1}
 }
 
 func (s *SigmoidNeuron) ComputeSigmoid(input *internalmath.Vector[float64]) float64 {

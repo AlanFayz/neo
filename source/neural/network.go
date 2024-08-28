@@ -7,14 +7,20 @@ import (
 )
 
 type Layer struct {
-	Neurons       []SigmoidNeuron
-	ForwardInputs internalmath.Vector[float64]
+	Neurons         []SigmoidNeuron
+	ForwardedInputs internalmath.Vector[float64]
 }
 
 type NeuralNetwork struct {
-	Inputs       internalmath.Vector[float64]
-	HiddenLayers []Layer
-	Output       Layer
+	Inputs internalmath.Vector[float64]
+	Layers []Layer
+}
+
+// should be arrays in the future
+type DataGroup struct {
+	Input        *internalmath.Vector[float64]
+	Expected     *internalmath.Vector[float64]
+	LearningRate float64
 }
 
 // neuron count is the number of neurons per hidden layer, the last neuron count is for the output layer
@@ -30,78 +36,109 @@ func CreateNeuralNetwork(input *internalmath.Vector[float64], neuronCount ...int
 		first.Neurons = append(first.Neurons, *CreateNeuronRandomized(network.Inputs.Size()))
 	}
 
-	network.HiddenLayers = append(network.HiddenLayers, first)
+	first.ForwardedInputs = *internalmath.CreateVectorWithSize[float64](neuronCount[0])
 
-	//do the rest of the hidden layers
-	for i := 1; i < len(neuronCount)-1; i++ {
+	network.Layers = append(network.Layers, first)
+
+	//do the rest of the layers hidden and output
+	for i := 1; i < len(neuronCount); i++ {
 		layer := Layer{}
 
 		for neuronIndex := 0; neuronIndex < neuronCount[i]; neuronIndex++ {
 			layer.Neurons = append(layer.Neurons, *CreateNeuronRandomized(neuronCount[i-1]))
 		}
 
-		network.HiddenLayers = append(network.HiddenLayers, layer)
-	}
-
-	//create the output layer
-	for neuronIndex := 0; neuronIndex < neuronCount[len(neuronCount)-1]; neuronIndex++ {
-		network.Output.Neurons = append(network.Output.Neurons, *CreateNeuronRandomized(neuronCount[len(neuronCount)-2]))
+		layer.ForwardedInputs = *internalmath.CreateVectorWithSize[float64](neuronCount[i])
+		network.Layers = append(network.Layers, layer)
 	}
 
 	return &network
 }
 
-func (n *NeuralNetwork) Randomize() {
-	for layerIndex := 0; layerIndex < len(n.HiddenLayers); layerIndex++ {
-		layer := &n.HiddenLayers[layerIndex]
-		for i := 0; i < len(layer.Neurons); i++ {
-			layer.Neurons[i] = *CreateNeuronRandomized(layer.Neurons[i].Weights.Size())
-		}
-	}
-}
-
 func (n *NeuralNetwork) GetOutputs() *internalmath.Vector[float64] {
-	return &n.Output.ForwardInputs
+	return &n.Layers[len(n.Layers)-1].ForwardedInputs
 }
 
 func (n *NeuralNetwork) ComputeInput() {
-	for i := 0; i < len(n.HiddenLayers[0].Neurons); i++ {
-		n.HiddenLayers[0].ForwardInputs.PushValue(n.HiddenLayers[0].Neurons[i].ComputeSigmoid(&n.Inputs))
+	for i := 0; i < len(n.Layers[0].Neurons); i++ {
+		n.Layers[0].ForwardedInputs.Data[i] = n.Layers[0].Neurons[i].ComputeSigmoid(&n.Inputs)
 	}
+
 }
 
-func (n *NeuralNetwork) ComputeHiddenLayers() {
-	for i := 1; i < len(n.HiddenLayers); i++ {
-		input := &n.HiddenLayers[i-1].ForwardInputs
-		output := &n.HiddenLayers[i]
+func (n *NeuralNetwork) Train(data *DataGroup) {
+	n.ComputeGradients(data.Input, data.Expected)
+	n.AdjustWeights(data.LearningRate)
+}
 
-		for neuron := 0; neuron < len(output.Neurons); neuron++ {
-			neuronValue := &output.Neurons[neuron]
-			output.ForwardInputs.PushValue(neuronValue.ComputeSigmoid(input))
+func (n *NeuralNetwork) CalculateCost(input *internalmath.Vector[float64], expectedOutput *internalmath.Vector[float64]) float64 {
+	n.Compute(input)
+	return internalmath.Cost(expectedOutput, n.GetOutputs())
+}
+
+func (n *NeuralNetwork) ComputeGradients(input *internalmath.Vector[float64], expectedOutput *internalmath.Vector[float64]) {
+	cost := n.CalculateCost(input, expectedOutput)
+
+	const h float64 = 1e-3
+
+	for i := 0; i < len(n.Layers); i++ {
+		layer := &n.Layers[i]
+
+		for j := 0; j < len(layer.Neurons); j++ {
+			neuron := &layer.Neurons[j]
+
+			for k := 0; k < neuron.Weights.Size(); k++ {
+				neuron.Weights.Data[k] += h
+				newCost := n.CalculateCost(input, expectedOutput)
+				neuron.Gradients.Data[k] = (newCost - cost) / h
+				neuron.Weights.Data[k] -= h
+			}
+
+			neuron.Bias += h
+			newCost := n.CalculateCost(input, expectedOutput)
+			neuron.BiasGradient = (newCost - cost) / h
+			neuron.Bias -= h
 		}
 	}
 }
 
-func (n *NeuralNetwork) ComputeOutputs() {
-	last := len(n.HiddenLayers) - 1
+func (n *NeuralNetwork) AdjustWeights(learningRate float64) {
+	for i := 0; i < len(n.Layers); i++ {
+		layer := &n.Layers[i]
 
-	input := &n.HiddenLayers[last].ForwardInputs
-	output := &n.Output
+		for j := 0; j < len(layer.Neurons); j++ {
+			neuron := &layer.Neurons[j]
 
-	for neuron := 0; neuron < len(output.Neurons); neuron++ {
-		neuronValue := &output.Neurons[neuron]
-		output.ForwardInputs.PushValue(neuronValue.ComputeSigmoid(input))
+			for k := 0; k < neuron.Weights.Size(); k++ {
+				neuron.Weights.Data[k] -= neuron.Gradients.Data[k] * learningRate
+			}
+
+			neuron.Bias -= neuron.BiasGradient * learningRate
+		}
 	}
 }
 
-func (n *NeuralNetwork) Compute() error {
-	if len(n.HiddenLayers) == 0 || n.Inputs.Size() == 0 || len(n.Output.Neurons) == 0 {
+func (n *NeuralNetwork) ComputeLayers() {
+	for i := 1; i < len(n.Layers); i++ {
+		input := &n.Layers[i-1].ForwardedInputs
+		output := &n.Layers[i]
+
+		for neuron := 0; neuron < len(output.Neurons); neuron++ {
+			neuronValue := &output.Neurons[neuron]
+			output.ForwardedInputs.Data[neuron] = neuronValue.ComputeSigmoid(input)
+		}
+
+	}
+}
+
+func (n *NeuralNetwork) Compute(input *internalmath.Vector[float64]) error {
+	if len(n.Layers) == 0 || n.Inputs.Size() == 0 {
 		return errors.New("neural network not properly initialized")
 	}
 
+	n.Inputs = *input
 	n.ComputeInput()
-	n.ComputeHiddenLayers()
-	n.ComputeOutputs()
+	n.ComputeLayers()
 
 	return nil
 }
