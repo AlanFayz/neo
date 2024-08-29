@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/DevAlgos/neo/source/algorithms"
 	"github.com/DevAlgos/neo/source/neural/feedforward"
 )
 
@@ -31,8 +32,34 @@ func main() {
 		network.Train(&data)
 	}
 
+	//kareem work
+
 	network.FeedForward(testInput)
 
 	fmt.Println("------- after training --------")
 	fmt.Println(network.GetResult())
+
+	fmt.Println("Hi")
+	y := []float64{140, 155, 159, 179, 192, 200, 212, 215}
+	x1 := []float64{60, 62, 67, 70, 71, 72, 75, 78}
+	x2 := []float64{22, 25, 24, 20, 15, 14, 14, 11}
+	comb := [][]float64{x1, x2}
+
+	f := algorithms.DataInput{Y: y, X: comb}
+	statData := algorithms.StatisticalData{}
+
+	for _, indepVar := range f.X {
+		statData.SquareSums = append(statData.SquareSums, algorithms.SquareSum(indepVar))
+		statData.CrossYsums = append(statData.CrossYsums, algorithms.CrossSums(indepVar, f.Y))
+	}
+	statData.DotProduct = algorithms.DotProduct(f.X)
+	statData.N = len(f.Y)
+	fmt.Println(statData)
+
+	// fin := []DataPoint{}
+	// for index, y := range y{
+	// 	t:=[]float64{float64(x1[index]), float64(x2[index])}
+	// 	fin = append(fin, DataPoint{Y:float64(y),X:t})
+	// }
+
 }
