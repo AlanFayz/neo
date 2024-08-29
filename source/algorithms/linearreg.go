@@ -1,5 +1,7 @@
 package algorithms
 
+import "fmt"
+
 // "gonum.org/v1/plot"
 // "gonum.org/v1/plot/plotter"
 // "gonum.org/v1/plot/plotutil"
@@ -10,16 +12,18 @@ type DataInput struct {
 }
 
 type RegressionSums struct {
-	ex2 []float64
-	eX2 []float64
-	EX2 []float64
+	SumX2 []float64
+	SumXy2 []float64
+	SumXX float64
 }
 
 type StatisticalData struct {
 	DotProduct float64
 	CrossYsums []float64
 	SquareSums []float64
-	N          int
+	Sums []float64
+	YSum float64 
+	N int
 }
 
 func SquareSum(data []float64) float64 {
@@ -39,7 +43,23 @@ func CrossSums(x []float64, y []float64) float64 {
 	return sum
 
 }
+func SumArr(x []float64) float64 {
+	var sum float64
+	for _,i := range x {
+		sum+=i
+	}
+	return sum
+}
 
+
+func Product(input []float64) float64 {
+	var total float64
+	total = 1
+	for _,i := range input {
+		total*= i
+	}
+	return total
+}
 func DotProduct(input [][]float64) float64 {
 	var sum float64
 	var curr float64
@@ -54,6 +74,31 @@ func DotProduct(input [][]float64) float64 {
 	}
 	return sum
 }
+
+
+
+
+func LinearRegression(f DataInput){
+	statData := StatisticalData{}
+
+	for _, indepVar := range f.X {
+		statData.SquareSums = append(statData.SquareSums, SquareSum(indepVar))
+		statData.CrossYsums = append(statData.CrossYsums, CrossSums(indepVar, f.Y))
+		statData.Sums = append(statData.Sums,SumArr(indepVar))
+	}
+	statData.DotProduct = DotProduct(f.X)
+	statData.N = len(f.Y)
+	statData.YSum = SumArr(f.Y)
+	regressionSums := RegressionSums{}
+	fmt.Println(statData)
+	for i := range len(statData.Sums) {
+		regressionSums.SumX2 =append(regressionSums.SumX2,statData.SquareSums[i]-((statData.Sums[i]*statData.Sums[i]))/float64(statData.N))
+		regressionSums.SumXy2 =append(regressionSums.SumXy2,statData.CrossYsums[i]-((statData.Sums[i]*statData.YSum)/float64(statData.N)))
+	}
+	regressionSums.SumXX = statData.DotProduct-Product(statData.Sums)/float64(statData.N)
+	fmt.Println(regressionSums)
+}
+
 
 // func main() {
 
