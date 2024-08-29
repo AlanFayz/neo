@@ -67,7 +67,7 @@ func main(){
 	comb  := [][]float64{x1, x2}
 
 	f := DataInput{Y:y,X:comb}
-	var statData StatisticalData
+	statData := StatisticalData{}
 
 	for _, indepVar := range f.X{
 		statData.squareSums = append(statData.squareSums,squareSum(indepVar))
@@ -76,7 +76,8 @@ func main(){
 	statData.DotProduct = DotProduct(f.X)
 	statData.n = len(f.Y)
 	fmt.Println(statData)
-
+	// var RegSums RegressionSums
+	
 
 	// fin := []DataPoint{}
 	// for index, y := range y{
