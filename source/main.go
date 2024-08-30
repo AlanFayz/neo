@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	internalmath "github.com/DevAlgos/neo/source/math"
 	"github.com/DevAlgos/neo/source/neural/feedforward"
 )
 
@@ -55,4 +56,23 @@ func main() {
 	fmt.Println(network.GetResult())
 
 	fmt.Println("single threaded time took ", time.Since(current).Seconds(), " seconds")
+
+	matrix1 := [][]float64{}
+	matrix2 := [][]float64{}
+	matrix1 = append(matrix1, []float64{}, []float64{})
+	matrix2 = append(matrix2, []float64{}, []float64{})
+
+	matrix1[0] = append(matrix1[0], 1.0)
+	matrix1[0] = append(matrix1[0], 4.0)
+
+	matrix1[1] = append(matrix1[0], 1.0)
+	matrix1[1] = append(matrix1[0], 4.0)
+
+	matrix2[0] = append(matrix1[0], 1.0)
+	matrix2[0] = append(matrix1[0], 4.0)
+
+	matrix2[1] = append(matrix1[0], 1.0)
+	matrix2[1] = append(matrix1[0], 4.0)
+
+	fmt.Println(internalmath.MultiplyMatricies(matrix1, matrix2))
 }
