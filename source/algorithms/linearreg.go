@@ -1,11 +1,7 @@
 package algorithms
 
-import "fmt"
+// import "fmt"
 
-// "gonum.org/v1/plot"
-// "gonum.org/v1/plot/plotter"
-// "gonum.org/v1/plot/plotutil"
-// "gonum.org/v1/plot/vg"
 type DataInput struct {
 	Y []float64
 	X [][]float64
@@ -26,12 +22,31 @@ type StatisticalData struct {
 	N int
 }
 
+type RegressionModel struct {
+	Coefficients []float64
+	YIntercept float64
+
+}
+
 func SquareSum(data []float64) float64 {
 	var sum float64
 	for _, i := range data {
 		sum += i * i
 	}
 	return sum
+
+}
+
+func Cut(i int, xs []float64) ([]float64) {
+	fin := []float64{}
+	for index,x := range xs {
+		if index == i{
+			continue
+		}
+		fin = append(fin,x)
+	}
+	return fin
+//   return append(xs[:i], xs[i+1:]...)
 
 }
 
@@ -78,7 +93,7 @@ func DotProduct(input [][]float64) float64 {
 
 
 
-func LinearRegression(f DataInput){
+func LinearRegression(f DataInput) RegressionModel{
 	statData := StatisticalData{}
 
 	for _, indepVar := range f.X {
@@ -90,51 +105,38 @@ func LinearRegression(f DataInput){
 	statData.N = len(f.Y)
 	statData.YSum = SumArr(f.Y)
 	regressionSums := RegressionSums{}
-	fmt.Println(statData)
+	// fmt.Println(statData)
 	for i := range len(statData.Sums) {
 		regressionSums.SumX2 =append(regressionSums.SumX2,statData.SquareSums[i]-((statData.Sums[i]*statData.Sums[i]))/float64(statData.N))
 		regressionSums.SumXy2 =append(regressionSums.SumXy2,statData.CrossYsums[i]-((statData.Sums[i]*statData.YSum)/float64(statData.N)))
 	}
 	regressionSums.SumXX = statData.DotProduct-Product(statData.Sums)/float64(statData.N)
-	fmt.Println(regressionSums)
+	// fmt.Println(regressionSums)
+
+	model := RegressionModel{}
+	for i := range len(statData.Sums) {
+		numerator := Product(Cut(i, regressionSums.SumX2))*regressionSums.SumXy2[i]-regressionSums.SumXX*Product(Cut(i,regressionSums.SumXy2))
+		denominator := Product(regressionSums.SumX2)-(regressionSums.SumXX)*(regressionSums.SumXX)
+		model.Coefficients = append(model.Coefficients, numerator/denominator)	
+		} 
+	
+	var YIntercept float64
+	YIntercept = statData.YSum/float64(statData.N)
+	for index,coeff := range model.Coefficients {
+		YIntercept-= (statData.Sums[index]/float64(statData.N))*coeff
+	}
+	model.YIntercept = YIntercept
+	return model
 }
 
 
-// func main() {
+func (model *RegressionModel) Predict(inputs []float64) float64{
+	var prediction float64
+	prediction = model.YIntercept
+	for index,coeff := range model.Coefficients {
+		prediction += inputs[index]*coeff
+	}
+	
+	return prediction
+}
 
-// 	p := plot.New()
-// 	points := []DataPoint{DataPoint{1,1},DataPoint{2,2},DataPoint{3,3},DataPoint{5,10}}
-// 	fmt.Println(points)
-// 	p.Title.Text = "Plotutil example"
-// 	p.X.Label.Text = "X"
-// 	p.Y.Label.Text = "Y"
-
-// 	// err := plotutil.AddLinePoints(p,
-// 	// 	"First", Points(points),
-
-// 	// )
-// 	scatter, err := plotter.NewScatter( Points(points))
-// 	// scatter.GlyphStyle.Shape = plotter.CircleGlyph{}
-
-// 	p.Add(scatter)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	// Save the plot to a PNG file.
-// 	if err := p.Save(10*vg.Inch, 10*vg.Inch, "points.png"); err != nil {
-// 		panic(err)
-// 	}
-// }
-
-// // randomPoints returns some random x, y points.
-// func Points(points []DataPoint) plotter.XYs {
-// 	pts := make(plotter.XYs, len(points))
-// 	for index,p := range pts {
-// 		// p := points[index]
-// 		pts[index].X = p.X
-// 		pts[index].Y = p.Y
-
-// 	}
-// 	return pts
-// }
