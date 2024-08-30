@@ -19,7 +19,7 @@ type StatisticalData struct {
 	SquareSums []float64
 	Sums []float64
 	YSum float64 
-	N int
+	N float64
 }
 
 type RegressionModel struct {
@@ -102,15 +102,15 @@ func LinearRegression(f DataInput) RegressionModel{
 		statData.Sums = append(statData.Sums,SumArr(indepVar))
 	}
 	statData.DotProduct = DotProduct(f.X)
-	statData.N = len(f.Y)
+	statData.N = float64(len(f.Y))
 	statData.YSum = SumArr(f.Y)
 	regressionSums := RegressionSums{}
 	// fmt.Println(statData)
 	for i := range len(statData.Sums) {
-		regressionSums.SumX2 =append(regressionSums.SumX2,statData.SquareSums[i]-((statData.Sums[i]*statData.Sums[i]))/float64(statData.N))
-		regressionSums.SumXy2 =append(regressionSums.SumXy2,statData.CrossYsums[i]-((statData.Sums[i]*statData.YSum)/float64(statData.N)))
+		regressionSums.SumX2 =append(regressionSums.SumX2,statData.SquareSums[i]-((statData.Sums[i]*statData.Sums[i]))/statData.N)
+		regressionSums.SumXy2 =append(regressionSums.SumXy2,statData.CrossYsums[i]-((statData.Sums[i]*statData.YSum)/statData.N))
 	}
-	regressionSums.SumXX = statData.DotProduct-Product(statData.Sums)/float64(statData.N)
+	regressionSums.SumXX = statData.DotProduct-Product(statData.Sums)/statData.N
 	// fmt.Println(regressionSums)
 
 	model := RegressionModel{}
@@ -121,9 +121,9 @@ func LinearRegression(f DataInput) RegressionModel{
 		} 
 	
 	var YIntercept float64
-	YIntercept = statData.YSum/float64(statData.N)
+	YIntercept = statData.YSum/statData.N
 	for index,coeff := range model.Coefficients {
-		YIntercept-= (statData.Sums[index]/float64(statData.N))*coeff
+		YIntercept-= (statData.Sums[index]/statData.N)*coeff
 	}
 	model.YIntercept = YIntercept
 	return model
