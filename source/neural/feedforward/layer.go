@@ -173,3 +173,26 @@ func (l *Layer) ResetGradients() {
 		l.BiasGradients[out] = 0
 	}
 }
+
+func (l *Layer) Combine(other *Layer) *Layer {
+	//layer needs to have the same dimensions
+	if l.NeuronInCount != other.NeuronInCount || l.NeuronOutCount != other.NeuronOutCount {
+		fmt.Println("failed to combine as layers have different dimesions")
+		return nil
+	}
+
+	for out := 0; out < l.NeuronOutCount; out++ {
+		for in := 0; in < l.NeuronInCount; in++ {
+			index := in + out*l.NeuronInCount
+
+			l.WeightGradients[index] += other.WeightGradients[index]
+			l.WeightGradients[index] /= 2
+		}
+
+		l.BiasGradients[out] += other.BiasGradients[out]
+		l.BiasGradients[out] /= 2
+
+	}
+
+	return l
+}
