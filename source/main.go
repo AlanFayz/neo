@@ -1,78 +1,134 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"time"
+	"os"
+	"sort"
+	"strings"
 
 	internalmath "github.com/DevAlgos/neo/source/math"
-	"github.com/DevAlgos/neo/source/neural/feedforward"
 )
 
+const (
+	testInput  = "../resource/language training/book of wisdom.txt"
+	characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n"
+)
+
+type Biagram struct {
+	First, Second byte
+}
+
+type KeyValuePair struct {
+	Key   Biagram
+	Value int
+}
+
 func main() {
-	network := feedforward.CreateNeuralNetwork(2, 50, 50, 30, 20, 100, 4)
+	charToToken := make(map[byte]int, 0)
 
-	testInput := make([]float64, 0)
-	testInput = append(testInput, 1.0, 0.5)
-
-	expectedInput := make([]float64, 0)
-	expectedInput = append(expectedInput, 0.5, 0.0, 0.5, 1.0)
-
-	network.FeedForward(testInput)
-
-	fmt.Println("------- before training --------")
-	fmt.Println(network.GetResult())
-
-	network.ClearGradients()
-
-	data := feedforward.DataGroup{}
-	data.Expected = expectedInput
-	data.Input = testInput
-	data.LearningRate = 10.0
-
-	current := time.Now()
-
-	for trainingCount := 0; trainingCount < 100_000; trainingCount++ {
-		network.Train(&data)
+	for i, char := range characters {
+		charToToken[byte(char)] = i
 	}
 
-	fmt.Println("------- training single threaded --------")
-	fmt.Println(network.GetResult())
+	tokenToChar := make(map[int]byte, 0)
 
-	fmt.Println("single threaded time took ", time.Since(current).Seconds(), " seconds")
-
-	dataGroups := []feedforward.DataGroup{}
-
-	for i := 0; i < 100_000; i++ {
-		dataGroups = append(dataGroups, data)
+	for r, i := range charToToken {
+		tokenToChar[i] = r
 	}
 
-	network.ClearGradients()
+	bytes, err := os.ReadFile("../resource/language training/book of wisdom.txt")
 
-	current = time.Now()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
-	network.TrainDataParallel(dataGroups, 10.0, 1)
+	text := string(bytes)
 
-	fmt.Println("------- training multi threaded --------")
-	fmt.Println(network.GetResult())
+	biagramMap := map[Biagram]int{}
 
-	fmt.Println("single threaded time took ", time.Since(current).Seconds(), " seconds")
+	for i, _ := range text {
+		first := i
+		second := i + 1
 
-	matrix1 := [][]float64{}
-	matrix2 := [][]float64{}
-	matrix1 = append(matrix1, []float64{}, []float64{})
-	matrix2 = append(matrix2, []float64{}, []float64{})
+		if second >= len(text) {
+			break
+		}
 
-	matrix1[0] = append(matrix1[0], 1.0)
-	matrix1[0] = append(matrix1[0], 4.0)
+		biagram := Biagram{}
+		biagram.First = text[first]
+		biagram.Second = text[second]
 
-	matrix1[1] = append(matrix1[0], 1.0)
-	matrix1[1] = append(matrix1[0], 4.0)
+		biagramMap[biagram] += 1
+	}
 
-	matrix2[0] = append(matrix1[0], 1.0)
-	matrix2[0] = append(matrix1[0], 4.0)
+	var biagramArray []KeyValuePair
 
-	matrix2[1] = append(matrix1[0], 1.0)
-	matrix2[1] = append(matrix1[0], 4.0)
+	for key, val := range biagramMap {
+		biagramArray = append(biagramArray, KeyValuePair{Key: key, Value: val})
+	}
 
-	fmt.Println(internalmath.MultiplyMatricies(matrix1, matrix2))
+	sort.Slice(biagramArray, func(i, j int) bool {
+		return biagramArray[i].Value > biagramArray[j].Value
+	})
+
+	matrix := internalmath.CreateMatrix(len(characters), len(characters))
+
+	for _, biagramAndCount := range biagramArray {
+		matrix.Set(charToToken[biagramAndCount.Key.First], charToToken[biagramAndCount.Key.Second], float64(biagramAndCount.Value))
+	}
+
+	const epsilon float64 = 1e-10
+
+	for y := 0; y < len(characters); y++ {
+		sum := 0.0
+
+		for x := 0; x < len(characters); x++ {
+			sum += matrix.Get(x, y)
+		}
+
+		sum = max(sum, epsilon)
+
+		for x := 0; x < len(characters); x++ {
+			current := matrix.Get(x, y)
+			matrix.Set(x, y, current/sum)
+		}
+	}
+
+	var n int
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println("Enter number of iterations: ")
+	fmt.Scanf("%d\n", &n)
+
+	fmt.Println("Enter Input: ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	output := input
+
+	fmt.Println(output)
+
+	for i := 0; i < n; i++ {
+		last := len(output) - 1
+
+		token, exists := charToToken[byte(output[last])]
+		if !exists {
+			fmt.Println("Character not found in token map.")
+			return
+		}
+
+		row := matrix.GetRow(token)
+		index := internalmath.IndexChoice(row, 1)
+
+		char, exists := tokenToChar[index[0]]
+		if !exists {
+			fmt.Println("Index out of bounds for character.")
+			return
+		}
+		output = output + string(char)
+		fmt.Println(output)
+	}
+
 }

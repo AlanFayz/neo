@@ -3,6 +3,7 @@ package internalmath
 import (
 	"fmt"
 	"math"
+	"math/rand"
 )
 
 func Sigmoid(n float64) float64 {
@@ -51,4 +52,41 @@ func CostVector(expected *Vector[float64], output *Vector[float64]) float64 {
 	}
 
 	return costSum / float64(expected.Size())
+}
+
+func CDF(probablities []float64) []float64 {
+	cdf := make([]float64, len(probablities))
+	cumulative := 0.0
+
+	for i := range cdf {
+		cumulative += probablities[i]
+		cdf[i] = cumulative
+	}
+
+	return cdf
+}
+
+func FindIndexFromRight(val float64, cdf []float64) int {
+	for i, cumulativeProb := range cdf {
+		if cumulativeProb >= val {
+			return i
+		}
+	}
+
+	return len(cdf) - 1
+}
+
+func IndexChoice(probabilities []float64, count int) []int {
+	values := make([]int, 0)
+
+	cdf := CDF(probabilities)
+
+	for i := 0; i < count; i++ {
+
+		rnd := rand.Float64()
+		sample := FindIndexFromRight(rnd, cdf)
+		values = append(values, sample)
+	}
+
+	return values
 }
