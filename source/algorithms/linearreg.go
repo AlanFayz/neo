@@ -92,8 +92,7 @@ func DotProduct(input [][]float64) float64 {
 
 
 
-
-func LinearRegression(f DataInput) RegressionModel{
+func CalculateStatisticalSums(f DataInput) StatisticalData{
 	statData := StatisticalData{}
 
 	for _, indepVar := range f.X {
@@ -104,6 +103,11 @@ func LinearRegression(f DataInput) RegressionModel{
 	statData.DotProduct = DotProduct(f.X)
 	statData.N = float64(len(f.Y))
 	statData.YSum = SumArr(f.Y)
+	return statData
+
+}
+
+func CalcuateRegressionSums(statData StatisticalData) RegressionSums{
 	regressionSums := RegressionSums{}
 	// fmt.Println(statData)
 	for i := range len(statData.Sums) {
@@ -111,6 +115,13 @@ func LinearRegression(f DataInput) RegressionModel{
 		regressionSums.SumXy2 =append(regressionSums.SumXy2,statData.CrossYsums[i]-((statData.Sums[i]*statData.YSum)/statData.N))
 	}
 	regressionSums.SumXX = statData.DotProduct-Product(statData.Sums)/statData.N
+	return regressionSums
+}
+
+
+func LinearRegression(f DataInput) RegressionModel{
+	statData := CalculateStatisticalSums(f)
+	regressionSums := CalcuateRegressionSums(statData)
 	// fmt.Println(regressionSums)
 
 	model := RegressionModel{}
